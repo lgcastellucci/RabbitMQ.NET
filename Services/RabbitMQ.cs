@@ -53,7 +53,7 @@ namespace Services
 
         }
 
-        public async Task StartConsumer()
+        public async Task StartConsumer(string comsumerTag)
         {
             //RegistraLogService.Log("Iniciando o Consumer.");
 
@@ -72,7 +72,7 @@ namespace Services
                 consumer.Received += Consumer_Received;
 
                 // start consuming
-                _channel.BasicConsume(consumer, _queueName);
+                _channel.BasicConsume(consumer, _queueName, false, comsumerTag);
 
                 // Wait for the reset event and clean up when it triggers
                 _resetEvent.WaitOne();
@@ -109,7 +109,7 @@ namespace Services
 
             MessageReceivedLog?.Invoke(this, "[Processando | " + DateTime.Now.ToString() + "] " + message);
 
-            Task.Delay(30000).Wait();
+            Task.Delay(5000).Wait();
 
             _channel.BasicAck(e.DeliveryTag, false);
 

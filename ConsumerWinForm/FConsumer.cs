@@ -15,7 +15,8 @@ namespace ConsumerWinForm
 
         private void btnConectarConsumer_Click(object sender, EventArgs e)
         {
-            Task.Run(async () => { await _rabbitmqService.StartConsumer(); });
+
+            Task.Run(async () => { await _rabbitmqService.StartConsumer(Application.ProductName); });
             lbStatus.Text = "Consumer Iniciado";
         }
 
