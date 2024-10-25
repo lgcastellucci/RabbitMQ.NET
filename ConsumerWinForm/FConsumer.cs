@@ -1,36 +1,54 @@
 using Services;
-using System.ComponentModel;
 
 namespace ConsumerWinForm
 {
     public partial class FConsumer : Form
     {
+        private ServciceRabbitMQ _rabbitmqService;
         public FConsumer()
         {
             InitializeComponent();
+            _rabbitmqService = new ServciceRabbitMQ();
+            _rabbitmqService.MessageReceived += RabbitmqService_MessageReceived;
+            _rabbitmqService.MessageReceivedLog += RabbitmqService_MessageReceivedLog;
         }
 
         private void btnConectarConsumer_Click(object sender, EventArgs e)
         {
-            var rabbitmqService = new ServciceRabbitMQ();
-
-            Task.Run(async () => { await rabbitmqService.StartConsumer(); });
+            Task.Run(async () => { await _rabbitmqService.StartConsumer(); });
+            lbStatus.Text = "Consumer Iniciado";
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var worker = new BackgroundWorker()
+            _rabbitmqService.StopConsumer();
+            lbStatus.Text = "Consumer Parado";
+        }
+        private void RabbitmqService_MessageReceived(object sender, string message)
+        {
+            // Atualiza o lbMensagens.Text na thread da UI
+            if (lbMensagens.InvokeRequired)
             {
-                WorkerReportsProgress = true,
-                WorkerSupportsCancellation = true
-            };
-            worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
-            worker.RunWorkerAsync();
+                lbMensagens.Invoke(new Action(() => lbMensagens.Items.Add(message)));
+            }
+            else
+            {
+                lbMensagens.Items.Add(message); 
+            }
         }
 
-        private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        private void RabbitmqService_MessageReceivedLog(object sender, string message)
         {
-            lbMensagens.Items.Add(Guid.NewGuid().ToString().Substring(0, 8) + "-" + DateTime.Now.ToString());
+            // Atualiza o lbMensagensLogs.Text na thread da UI
+            if (lbMensagensLogs.InvokeRequired)
+            {
+                lbMensagensLogs.Invoke(new Action(() => lbMensagensLogs.Items.Add(message)));
+            }
+            else
+            {
+                lbMensagensLogs.Items.Add(message); 
+            }
         }
+
     }
 }

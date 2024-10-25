@@ -30,7 +30,11 @@
         {
             lbMensagens = new ListBox();
             btnConectarConsumer = new Button();
-            button1 = new Button();
+            btnDesconectarConsumer = new Button();
+            statusStrip1 = new StatusStrip();
+            lbStatus = new ToolStripStatusLabel();
+            lbMensagensLogs = new ListBox();
+            statusStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // lbMensagens
@@ -39,12 +43,12 @@
             lbMensagens.ItemHeight = 15;
             lbMensagens.Location = new Point(14, 41);
             lbMensagens.Name = "lbMensagens";
-            lbMensagens.Size = new Size(413, 304);
+            lbMensagens.Size = new Size(413, 139);
             lbMensagens.TabIndex = 0;
             // 
             // btnConectarConsumer
             // 
-            btnConectarConsumer.Location = new Point(281, 12);
+            btnConectarConsumer.Location = new Point(14, 12);
             btnConectarConsumer.Name = "btnConectarConsumer";
             btnConectarConsumer.Size = new Size(144, 23);
             btnConectarConsumer.TabIndex = 1;
@@ -52,33 +56,66 @@
             btnConectarConsumer.UseVisualStyleBackColor = true;
             btnConectarConsumer.Click += btnConectarConsumer_Click;
             // 
-            // button1
+            // btnDesconectarConsumer
             // 
-            button1.Location = new Point(14, 12);
-            button1.Name = "button1";
-            button1.Size = new Size(146, 23);
-            button1.TabIndex = 2;
-            button1.Text = "button1";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+            btnDesconectarConsumer.Location = new Point(279, 12);
+            btnDesconectarConsumer.Name = "btnDesconectarConsumer";
+            btnDesconectarConsumer.Size = new Size(146, 23);
+            btnDesconectarConsumer.TabIndex = 2;
+            btnDesconectarConsumer.Text = "Desconectar Consumer";
+            btnDesconectarConsumer.UseVisualStyleBackColor = true;
+            btnDesconectarConsumer.Click += button1_Click;
+            // 
+            // statusStrip1
+            // 
+            statusStrip1.Items.AddRange(new ToolStripItem[] { lbStatus });
+            statusStrip1.Location = new Point(0, 336);
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.Size = new Size(439, 22);
+            statusStrip1.TabIndex = 3;
+            statusStrip1.Text = "statusStrip1";
+            // 
+            // lbStatus
+            // 
+            lbStatus.DisplayStyle = ToolStripItemDisplayStyle.Text;
+            lbStatus.Name = "lbStatus";
+            lbStatus.Size = new Size(49, 17);
+            lbStatus.Text = "lbStatus";
+            // 
+            // lbMensagensLogs
+            // 
+            lbMensagensLogs.FormattingEnabled = true;
+            lbMensagensLogs.ItemHeight = 15;
+            lbMensagensLogs.Location = new Point(12, 209);
+            lbMensagensLogs.Name = "lbMensagensLogs";
+            lbMensagensLogs.Size = new Size(413, 124);
+            lbMensagensLogs.TabIndex = 4;
             // 
             // FConsumer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(439, 358);
-            Controls.Add(button1);
+            Controls.Add(lbMensagensLogs);
+            Controls.Add(statusStrip1);
+            Controls.Add(btnDesconectarConsumer);
             Controls.Add(btnConectarConsumer);
             Controls.Add(lbMensagens);
             Name = "FConsumer";
             Text = "Consumer";
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
 
         private ListBox lbMensagens;
         private Button btnConectarConsumer;
-        private Button button1;
+        private Button btnDesconectarConsumer;
+        private StatusStrip statusStrip1;
+        private ToolStripStatusLabel lbStatus;
+        private ListBox lbMensagensLogs;
     }
 }

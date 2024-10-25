@@ -8,11 +8,19 @@ namespace Services
     {
         private string _hostApi;
         private string _queueName;
+        private ManualResetEvent _resetEvent;
+        private ConnectionFactory _connectionFactory;
+        private IConnection _connection;
+        private IModel _channel;
+
+        public event EventHandler<string> MessageReceived;
+        public event EventHandler<string> MessageReceivedLog;
 
         public ServciceRabbitMQ()
         {
             _hostApi = "amqp://guest:guest@192.168.0.150:5672";
             _queueName = "ParceleDebitosZignet";
+            _resetEvent = new ManualResetEvent(false);
         }
 
         public async Task AddMessage(string _mensage)
@@ -49,47 +57,68 @@ namespace Services
         {
             //RegistraLogService.Log("Iniciando o Consumer.");
 
-            var resetEvent = new ManualResetEvent(false);
-            var factory = new ConnectionFactory { Uri = new Uri(_hostApi) };
-
             try
             {
-                using (var connection = factory.CreateConnection())
-                {
-                    using (var channel = connection.CreateModel())
-                    {
-                        // Cria uma fila caso nao exista. Persistida em caso de restart do broker 
-                        channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                _connectionFactory = new ConnectionFactory { Uri = new Uri(_hostApi) };
 
-                        var consumer = new EventingBasicConsumer(channel);
+                _connection = _connectionFactory.CreateConnection();
 
-                        // add the message receive event
-                        consumer.Received += (model, deliveryEventArgs) =>
-                        {
-                            var body = deliveryEventArgs.Body.ToArray();
+                _channel = _connection.CreateModel();
 
-                            // convert the message back from byte[] to a string
-                            var message = Encoding.UTF8.GetString(body);
-                            //RegistraLogService.Log(" Recebido: " + message);
+                // Cria uma fila caso nao exista. Persistida em caso de restart do broker 
+                _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
 
-                            // ack the message, ie. confirm that we have processed it
-                            // otherwise it will be requeued a bit later
-                            channel.BasicAck(deliveryEventArgs.DeliveryTag, false);
-                        };
+                var consumer = new EventingBasicConsumer(_channel);
+                consumer.Received += Consumer_Received;
 
-                        // start consuming
-                        _ = channel.BasicConsume(consumer, _queueName);
+                // start consuming
+                _channel.BasicConsume(consumer, _queueName);
 
-                        // Wait for the reset event and clean up when it triggers
-                        resetEvent.WaitOne();
-                    }
-                }
+                // Wait for the reset event and clean up when it triggers
+                _resetEvent.WaitOne();
+
             }
             catch (Exception ex)
             {
                 //RegistraLogService.Log("LerFila: " + ex.Message);
             }
         }
-    
+
+        public async Task StopConsumer()
+        {
+            _resetEvent.Set();
+
+            // Fecha o canal e a conexão
+            if (_channel != null && _channel.IsOpen)
+            {
+                _channel.Close();
+                _channel.Dispose();
+            }
+
+            if (_connection != null && _connection.IsOpen)
+            {
+                _connection.Close();
+                _connection.Dispose();
+            }
+        }
+
+
+        private void Consumer_Received(object sender, BasicDeliverEventArgs e)
+        {
+            var message = Encoding.UTF8.GetString(e.Body.ToArray());
+
+            MessageReceivedLog?.Invoke(this, "[Processando | " + DateTime.Now.ToString() + "] " + message);
+
+            Task.Delay(30000).Wait();
+
+            _channel.BasicAck(e.DeliveryTag, false);
+
+            // Dispara o evento quando uma mensagem é recebida
+            MessageReceived?.Invoke(this, message);
+
+
+            MessageReceivedLog?.Invoke(this, "[Processado | " + DateTime.Now.ToString() + "] " + message);
+        }
+
     }
 }
