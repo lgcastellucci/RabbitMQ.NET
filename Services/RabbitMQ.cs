@@ -101,8 +101,6 @@ namespace Services
                 _connection.Dispose();
             }
         }
-
-
         private void Consumer_Received(object sender, BasicDeliverEventArgs e)
         {
             var message = Encoding.UTF8.GetString(e.Body.ToArray());
