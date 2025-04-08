@@ -8,6 +8,8 @@ namespace Services
     {
         private string _hostApi;
         private string _queueName;
+        private IDictionary<string, object> _arquments;
+
         private ManualResetEvent _resetEvent;
         private ConnectionFactory _connectionFactory;
         private IConnection _connection;
@@ -18,8 +20,11 @@ namespace Services
 
         public ServciceRabbitMQ()
         {
-            _hostApi = "amqp://guest:guest@192.168.0.150:5672";
+            _hostApi = "amqp://admin:123@192.168.0.150:5672";
             _queueName = "ParceleDebitosZignet";
+            _arquments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
+            // _arquments = new Dictionary<string, object> { { "x-queue-type", "classic" } };
+
             _resetEvent = new ManualResetEvent(false);
         }
 
@@ -37,7 +42,12 @@ namespace Services
                     using (var channel = connection.CreateModel())
                     {
                         // Cria uma fila caso nao exista. Persistida em caso de restart do broker 
-                        channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                        //channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+
+                        // Cria uma fila Quorum caso nao exista. Persistida em caso de restart do broker 
+
+                        //channel.QueueDelete(_queueName);
+                        channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: _arquments);
 
                         var body = Encoding.UTF8.GetBytes(writeQueue.Mensagem);
                         channel.BasicPublish(exchange: "", routingKey: _queueName, basicProperties: null, body: body);
@@ -66,7 +76,7 @@ namespace Services
                 _channel = _connection.CreateModel();
 
                 // Cria uma fila caso nao exista. Persistida em caso de restart do broker 
-                _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: _arquments);
 
                 var consumer = new EventingBasicConsumer(_channel);
                 consumer.Received += Consumer_Received;

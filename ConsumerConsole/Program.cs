@@ -2,8 +2,6 @@
 using RabbitMQ.Client.Events;
 using System.Reflection;
 using System.Text;
-using System.Threading.Channels;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ConsumerConsole
 {
@@ -13,8 +11,9 @@ namespace ConsumerConsole
         {
             Console.WriteLine("Iniciando Consummer");
 
-            string _hostApi = "amqp://guest:guest@192.168.0.150:5672";
+            string _hostApi = "amqp://admin:123@192.168.0.150:5672";
             string _queueName = "ParceleDebitosZignet";
+            IDictionary<string, object>  _arquments = new Dictionary<string, object> { { "x-queue-type", "quorum" } };
             var _resetEvent = new ManualResetEvent(false);
 
             try
@@ -25,7 +24,7 @@ namespace ConsumerConsole
                 var _channel = _connection.CreateModel();
 
                 // Cria uma fila caso nao exista. Persistida em caso de restart do broker 
-                _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                _channel.QueueDeclare(queue: _queueName, durable: true, exclusive: false, autoDelete: false, arguments: _arquments);
 
                 var consumer = new EventingBasicConsumer(_channel);
                 consumer.Received += (sender, e) =>
