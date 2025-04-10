@@ -1,0 +1,101 @@
+version: '3.6'
+
+services:
+  grafana_stack_rpg:
+    container_name: grafana_stack_rpg
+    environment:
+      - LANG=pt_BR.UTF-8
+      - TZ=America/Sao_Paulo    
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=123
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_FEATURE_TOGGLES_ENABLE=alertingSimplifiedRouting,alertingQueryAndExpressionsStepMode
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            access: proxy
+            orgId: 1
+            url: http://prometheus_stack_rpg:9090
+            basicAuth: false
+            isDefault: true
+            version: 1
+            editable: false
+        EOF
+        /run.sh
+    image: grafana/grafana:latest
+    ports:
+      - "4000:3000"
+    volumes:
+      - G_rabbitmq_prometheus_grafana:/var/lib/grafana      
+    networks:
+      - redeRabbitmqPrometheus
+
+  prometheus_stack_rpg:
+    image: prom/prometheus
+    container_name: prometheus_stack_rpg
+    ports:
+      - 9090:9090
+    volumes:
+      - P_rabbitmq_prometheus_grafana:/prometheus/
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    networks:
+      - redeRabbitmqPrometheus
+
+  rabbitmq_stack_rpg:
+    image: rabbitmq:4-management-alpine
+    container_name: rabbitmq_stack_rpg
+    environment:
+      - LANG=pt_BR.UTF-8
+      - TZ=America/Sao_Paulo     
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=123
+    configs:
+      - source: plugins
+        target: /etc/rabbitmq/enabled_plugins
+    ports:
+        - 5672:5672   # AMQP Port
+        - 5552:5552   # Stream Port
+        - 15672:15672 # Communication with the web management API         
+        - 15692:15692  # Porta do exportador Prometheus
+        - 25672:25672 # (erlang) communication between the nodes and CLI tool
+    networks:
+      - redeRabbitmqPrometheus
+    volumes:
+        - R_rabbitmq_prometheus_grafana:/var/lib/rabbitmq/
+
+configs:
+  plugins:
+    content: "[rabbitmq_prometheus, rabbitmq_federation, rabbitmq_management, rabbitmq_management_agent, rabbitmq_web_dispatch, rabbitmq_stream, rabbitmq_shovel, rabbitmq_shovel_management]."  
+
+  prometheus_config:
+    content: |
+      global:
+        scrape_interval: 15s
+
+      scrape_configs:
+        - job_name: 'rabbitmq'
+          static_configs:
+            - targets: ['rabbitmq_stack_rpg:15692']
+
+networks:
+  redeRabbitmqPrometheus:
+    driver: bridge
+
+volumes:
+  R_rabbitmq_prometheus_grafana:
+    external: true
+  P_rabbitmq_prometheus_grafana:
+    external: true
+  G_rabbitmq_prometheus_grafana:
+    external: true
